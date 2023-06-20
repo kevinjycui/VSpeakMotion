@@ -44,6 +44,9 @@ namespace EVMC4U
     //[RequireComponent(typeof(uOSC.uOscServer))]
     public class ExternalReceiver : MonoBehaviour, IExternalReceiver
     {
+        [SerializeField]
+        public VDataCapture captureObject;
+
         [Header("ExternalReceiver v4.0")]
         [SerializeField, Label("VRMモデルのGameObject")]
         public GameObject Model = null;
@@ -851,6 +854,7 @@ namespace EVMC4U
                 if (BlendShapeSynchronize && blendShapeProxy != null)
                 {
                     blendShapeProxy.SetValues(BlendShapeToValueDictionary);
+                    captureObject.RecordBlendShapeKeys(BlendShapeToValueDictionary);
                 }
             }
         }
@@ -946,6 +950,7 @@ namespace EVMC4U
                     BoneSynchronize(bone.Value, HumanBodyBonesPositionTable[bone.Value], HumanBodyBonesRotationTable[bone.Value]);
                 }
             }
+            captureObject.RecordBones(HumanBodyBonesPositionTable, HumanBodyBonesRotationTable);
         }
 
         //ボーン位置同期
