@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 using VRM;
@@ -22,7 +23,9 @@ public class VDataCapture : MonoBehaviour
     [SerializeField]
     private Button saveButton;
 
-    private Dictionary<BlendShapeKey, float> BlendShapeToValueDictionary;
+    private float startTime = -1;
+    private List<List<float>> BlendShapeData = new List<List<float>>();
+    private List<List<float>> BoneData = new List<List<float>>();
 
     // Start is called before the first frame update
     void Start()
@@ -56,6 +59,8 @@ public class VDataCapture : MonoBehaviour
                 recordButton.GetComponentInChildren<Text>().text = "Recording...";
                 recordButton.interactable = false;
 
+                startTime = Time.realtimeSinceStartup;
+
                 StartCoroutine(WaitForStopRecording(recordingDuration));
             } 
         }
@@ -64,6 +69,7 @@ public class VDataCapture : MonoBehaviour
     IEnumerator WaitForStopRecording(int seconds)
     {
         yield return new WaitForSeconds(seconds);
+        startTime = -1;
         StopRecording();
     }
 
@@ -79,24 +85,70 @@ public class VDataCapture : MonoBehaviour
 
     public void SaveRecording()
     {
-        SavWav.Save("audio-" + System.DateTime.Now.ToString().Replace(":", "-"), goAudioSource.clip);
+        string timestamp = System.DateTime.Now.ToString().Replace(":", "-");
+
+        SavWav.Save("audio/" + timestamp, goAudioSource.clip);
+        SavCsv.Save("blendshapes/" + timestamp, BlendShapeData);
+        SavCsv.Save("bones/" + timestamp, BoneData);
+
         saveButton.interactable = false;
     }
 
     public void RecordBlendShapeKeys(Dictionary<BlendShapeKey, float> BlendShapeToValueDictionary)
     {
-        foreach(var item in BlendShapeToValueDictionary) {
-            Debug.Log(item.Key + ": " + item.Value);
+        if (startTime == -1) {
+            return;
         }
+        // foreach(var item in BlendShapeToValueDictionary) {
+        //     Debug.Log(item.Key + ": " + item.Value);
+        // }
+
+        SortedDictionary<string, float> _BlendShapeToValueDictionary;
+        _BlendShapeToValueDictionary = new SortedDictionary<string, float>(BlendShapeToValueDictionary.ToDictionary(item => item.Key.ToString(), item => item.Value));
+
+        List<float> BlendShapeDataWindow = new List<float>();
+        BlendShapeDataWindow.Add(Time.realtimeSinceStartup - startTime);
+        foreach(var key in _BlendShapeToValueDictionary.Values) {
+            BlendShapeDataWindow.Add(key);
+        }
+        BlendShapeData.Add(BlendShapeDataWindow);
     }
 
-    public void RecordBones(Dictionary<HumanBodyBones, Vector3> HumanBodyBonesPositionTable, Dictionary<HumanBodyBones, Quaternion> HumanBodyBonesRotationTable) {
-        foreach(var item in HumanBodyBonesPositionTable) {
-            Debug.Log(item.Key + "_Pos: " + item.Value);
+    public void RecordBones(Dictionary<HumanBodyBones, Vector3> HumanBodyBonesPositionTable, Dictionary<HumanBodyBones, Quaternion> HumanBodyBonesRotationTable) 
+    {
+        if (startTime == -1) {
+            return;
         }
-        foreach(var item in HumanBodyBonesRotationTable) {
-            Debug.Log(item.Key + "_Rot: " + item.Value);
+
+        // foreach(var item in HumanBodyBonesPositionTable) {
+        //     Debug.Log(item.Key + "_Pos: " + item.Value);
+        // }
+        // foreach(var item in HumanBodyBonesRotationTable) {
+        //     Debug.Log(item.Key + "_Rot: " + item.Value);
+        // }
+
+        SortedDictionary<string, Vector3> _HumanBodyBonesPositionTable;
+        _HumanBodyBonesPositionTable = new SortedDictionary<string, Vector3>(
+            HumanBodyBonesPositionTable.ToDictionary(item => item.Key.ToString(), item => item.Value));
+
+        SortedDictionary<string, Quaternion> _HumanBodyBonesRotationTable;
+        _HumanBodyBonesRotationTable = new SortedDictionary<string, Quaternion>(
+            HumanBodyBonesRotationTable.ToDictionary(item => item.Key.ToString(), item => item.Value));
+
+        List<float> BoneDataWindow = new List<float>();
+        BoneDataWindow.Add(Time.realtimeSinceStartup - startTime);
+        foreach(Vector3 position in _HumanBodyBonesPositionTable.Values) {
+            BoneDataWindow.Add(position.x);
+            BoneDataWindow.Add(position.y);
+            BoneDataWindow.Add(position.z);
         }
+        foreach(Quaternion rotation in _HumanBodyBonesRotationTable.Values) {
+            BoneDataWindow.Add(rotation.w);
+            BoneDataWindow.Add(rotation.x);
+            BoneDataWindow.Add(rotation.y);
+            BoneDataWindow.Add(rotation.z);
+        }
+        BoneData.Add(BoneDataWindow);
     }
 
 }
