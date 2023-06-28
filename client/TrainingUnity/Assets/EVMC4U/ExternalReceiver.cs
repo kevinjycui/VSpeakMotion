@@ -854,7 +854,7 @@ namespace EVMC4U
                 if (BlendShapeSynchronize && blendShapeProxy != null)
                 {
                     blendShapeProxy.SetValues(BlendShapeToValueDictionary);
-                    captureObject.RecordBlendShapeKeys(BlendShapeToValueDictionary);
+                    captureObject.RecordBlendShapes(BlendShapeToValueDictionary);
                 }
             }
         }

@@ -23,9 +23,17 @@ public class VDataCapture : MonoBehaviour
     [SerializeField]
     private Button saveButton;
 
-    private float startTime = -1;
-    private List<List<float>> BlendShapeData = new List<List<float>>();
-    private List<List<float>> BoneData = new List<List<float>>();
+    [SerializeField]
+    private VDataPlayback playback;
+
+    private float startTime = -1.0f;
+    // Time | Keys
+    public List<List<float>> BlendShapeData = new List<List<float>>();
+    // Time | Positional keys x y z | Rotational keys w x y z
+    public List<List<float>> BoneData = new List<List<float>>();
+
+    public const string[] BlendShapeKeys = {"A", "Angry", "Blink", "Blink_L", "Blink_R", "E", "Fun", "I", "Joy", "LookDown", "LookLeft", "LookRight", "LookUp", "Neutral", "O", "Sorrow", "Surprised", "U"};
+    public const string[] BoneKeys = {"Chest", "Head", "Hips", "LeftEye", "LeftFoot", "LeftHand", "LeftIndexDistal", "LeftIndexIntermediate", "LeftIndexProximal", "LeftLittleDistal", "LeftLittleIntermediate", "LeftLittleProximal", "LeftLowerArm", "LeftLowerLeg", "LeftMiddleDistal", "LeftMiddleIntermediate", "LeftMiddleProximal", "LeftRingDistal", "LeftRingIntermediate", "LeftRingProximal", "LeftShoulder", "LeftThumbDistal", "LeftThumbIntermediate", "LeftThumbProximal", "LeftToes", "LeftUpperArm", "LeftUpperLeg", "Neck", "RightEye", "RightFoot", "RightHand", "RightIndexDistal", "RightIndexIntermediate", "RightIndexProximal", "RightLittleDistal", "RightLittleIntermediate", "RightLittleProximal", "RightLowerArm", "RightLowerLeg", "RightMiddleDistal", "RightMiddleIntermediate", "RightMiddleProximal", "RightRingDistal", "RightRingIntermediate", "RightRingProximal", "RightShoulder", "RightThumbDistal", "RightThumbIntermediate", "RightThumbProximal", "RightToes", "RightUpperArm", "RightUpperLeg", "Spine", "UpperChest"};
 
     // Start is called before the first frame update
     void Start()
@@ -59,6 +67,8 @@ public class VDataCapture : MonoBehaviour
                 recordButton.GetComponentInChildren<Text>().text = "Recording...";
                 recordButton.interactable = false;
 
+                BlendShapeData.Clear();
+                BoneData.Clear();
                 startTime = Time.realtimeSinceStartup;
 
                 StartCoroutine(WaitForStopRecording(recordingDuration));
@@ -78,6 +88,7 @@ public class VDataCapture : MonoBehaviour
         Microphone.End(null);
         goAudioSource.loop = true;
         goAudioSource.Play();
+        playback.Init();
         recordButton.GetComponentInChildren<Text>().text = "Redo Recording";
         recordButton.interactable = true;
         saveButton.interactable = true;
@@ -87,16 +98,28 @@ public class VDataCapture : MonoBehaviour
     {
         string timestamp = System.DateTime.Now.ToString().Replace(":", "-");
 
-        SavWav.Save("audio/" + timestamp, goAudioSource.clip);
-        SavCsv.Save("blendshapes/" + timestamp, BlendShapeData);
-        SavCsv.Save("bones/" + timestamp, BoneData);
+        SavWav.Save("Audio/" + timestamp, goAudioSource.clip);
+        SavCsv.Save("Blendshapes/" + timestamp, BlendShapeData);
+        SavCsv.Save("Bones/" + timestamp, BoneData);
 
         saveButton.interactable = false;
     }
 
-    public void RecordBlendShapeKeys(Dictionary<BlendShapeKey, float> BlendShapeToValueDictionary)
+    public List<float> GetBlendShapeRecordAt(int index, float timePassed)
     {
-        if (startTime == -1) {
+        if (index < 0 || index >= BlendShapeData.Count) {
+            return null;
+        }
+        List<float> record = BlendShapeData.ElementAt(index);
+        if (record.ElementAt(0) > timePassed) {
+            return null;
+        }
+        return record;
+    }
+
+    public void RecordBlendShapes(Dictionary<BlendShapeKey, float> BlendShapeToValueDictionary)
+    {
+        if (startTime == -1.0f) {
             return;
         }
         // foreach(var item in BlendShapeToValueDictionary) {
@@ -105,6 +128,12 @@ public class VDataCapture : MonoBehaviour
 
         SortedDictionary<string, float> _BlendShapeToValueDictionary;
         _BlendShapeToValueDictionary = new SortedDictionary<string, float>(BlendShapeToValueDictionary.ToDictionary(item => item.Key.ToString(), item => item.Value));
+
+        // string keystrings = "";
+        // foreach(var key in _BlendShapeToValueDictionary.Keys) {
+        //     keystrings += "\"" + key + "\", ";
+        // }
+        // Debug.Log(keystrings);
 
         List<float> BlendShapeDataWindow = new List<float>();
         BlendShapeDataWindow.Add(Time.realtimeSinceStartup - startTime);
@@ -116,7 +145,7 @@ public class VDataCapture : MonoBehaviour
 
     public void RecordBones(Dictionary<HumanBodyBones, Vector3> HumanBodyBonesPositionTable, Dictionary<HumanBodyBones, Quaternion> HumanBodyBonesRotationTable) 
     {
-        if (startTime == -1) {
+        if (startTime == -1.0f) {
             return;
         }
 
@@ -131,9 +160,21 @@ public class VDataCapture : MonoBehaviour
         _HumanBodyBonesPositionTable = new SortedDictionary<string, Vector3>(
             HumanBodyBonesPositionTable.ToDictionary(item => item.Key.ToString(), item => item.Value));
 
+        // string keystrings = "";
+        // foreach(var key in _HumanBodyBonesPositionTable.Keys) {
+        //     keystrings += "\"" + key + "\", ";
+        // }
+        // Debug.Log("Positional: " + keystrings);
+
         SortedDictionary<string, Quaternion> _HumanBodyBonesRotationTable;
         _HumanBodyBonesRotationTable = new SortedDictionary<string, Quaternion>(
             HumanBodyBonesRotationTable.ToDictionary(item => item.Key.ToString(), item => item.Value));
+
+        // keystrings = "";
+        // foreach(var key in _HumanBodyBonesRotationTable.Keys) {
+        //     keystrings += "\"" + key + "\", ";
+        // }
+        // Debug.Log("Rotational: " + keystrings);
 
         List<float> BoneDataWindow = new List<float>();
         BoneDataWindow.Add(Time.realtimeSinceStartup - startTime);

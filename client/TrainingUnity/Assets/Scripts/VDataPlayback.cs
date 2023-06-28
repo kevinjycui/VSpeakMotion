@@ -12,13 +12,24 @@ public class VDataPlayback : MonoBehaviour
 {
     uOSC.uOscClient client = null;
 
+    private float loadTime = -1.0f;
+    private int cachedIndex = 0;
+    
+    [SerializeField]
+    private VDataCapture captureObject;
+
     void Start()
     {
         client = GetComponent<uOSC.uOscClient>();
     }
 
+    public void Init()
+    {
+        loadTime = Time.realtimeSinceStartup;
+    }
+
     void Update()
     {
-        
+
     }
 }
