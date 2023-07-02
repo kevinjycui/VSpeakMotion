@@ -31,13 +31,14 @@ public class VDataPlayback : MonoBehaviour
         blendShapeIndex = 0;
         boneIndex = 0;
         loadTime = Time.realtimeSinceStartup;
+
+        StartCoroutine(WaitForStopRecording(VDataCapture.recordingDuration));
     }
 
-    void RestartPlayback()
+    IEnumerator WaitForStopRecording(int seconds)
     {
-        if (blendShapeIndex >= captureObject.GetBlendShapeRecordLength() && boneIndex >= captureObject.GetBoneRecordLength()) {
-            Init();
-        }
+        yield return new WaitForSeconds(seconds);
+        Init();
     }
 
     bool UpdateBlendShapes(float timeSync)
@@ -45,7 +46,6 @@ public class VDataPlayback : MonoBehaviour
         List<float> blendShapeRecord = captureObject.GetBlendShapeRecordAt(blendShapeIndex, timeSync);
 
         if (blendShapeRecord == null) {
-            RestartPlayback();
             return false;
         }
 
@@ -62,7 +62,6 @@ public class VDataPlayback : MonoBehaviour
         List<float> boneRecord = captureObject.GetBoneRecordAt(boneIndex, timeSync);
 
         if (boneRecord == null) {
-            RestartPlayback();
             return false;
         }
 
