@@ -335,6 +335,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 295613788}
   m_CullTransparentMesh: 0
+--- !u!114 &407004161 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 4740143680597435063, guid: 86b1e8192cb57cd47890882526664df1,
+    type: 3}
+  m_PrefabInstance: {fileID: 4740143681371091891}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ed41645692348410d84991648165334c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &515840947
 GameObject:
   m_ObjectHideFlags: 0
@@ -931,7 +943,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   address: 127.0.0.1
-  port: 3333
+  port: 39541
   maxQueueSize: 100
   dataTransimissionInterval: 0
   onClientStarted:
@@ -1039,6 +1051,16 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 1761151428540106674, guid: fc8ea346cca7cf74b96f68ef0913ccd7,
+        type: 3}
+      propertyPath: server
+      value: 
+      objectReference: {fileID: 407004161}
+    - target: {fileID: 1761151428540106674, guid: fc8ea346cca7cf74b96f68ef0913ccd7,
+        type: 3}
+      propertyPath: playback
+      value: 
+      objectReference: {fileID: 1927457585}
     - target: {fileID: 1761151428540106674, guid: fc8ea346cca7cf74b96f68ef0913ccd7,
         type: 3}
       propertyPath: saveButton
@@ -1201,7 +1223,7 @@ PrefabInstance:
     - target: {fileID: 4740143680597435063, guid: 86b1e8192cb57cd47890882526664df1,
         type: 3}
       propertyPath: onDataReceived.m_PersistentCalls.m_Calls.Array.data[0].m_Mode
-      value: 5
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4740143680597435063, guid: 86b1e8192cb57cd47890882526664df1,
         type: 3}
@@ -1216,17 +1238,17 @@ PrefabInstance:
     - target: {fileID: 4740143680597435063, guid: 86b1e8192cb57cd47890882526664df1,
         type: 3}
       propertyPath: onDataReceived.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
-      value: ReceiveOSC
+      value: 
       objectReference: {fileID: 0}
     - target: {fileID: 4740143680597435063, guid: 86b1e8192cb57cd47890882526664df1,
         type: 3}
       propertyPath: onDataReceived.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_StringArgument
-      value: message
+      value: 
       objectReference: {fileID: 0}
     - target: {fileID: 4740143680597435063, guid: 86b1e8192cb57cd47890882526664df1,
         type: 3}
       propertyPath: onDataReceived.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
-      value: UnityEngine.Object, UnityEngine
+      value: 
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 86b1e8192cb57cd47890882526664df1, type: 3}

@@ -26,14 +26,23 @@ public class VDataCapture : MonoBehaviour
     [SerializeField]
     private VDataPlayback playback;
 
+    [SerializeField]
+    public uOSC.uOscServer server;
+
+    [SerializeField]
+    public int livePort = 39540;
+
+    [SerializeField]
+    public int playbackPort = 39541;
+
     private float startTime = -1.0f;
     // Time | Keys
     public List<List<float>> BlendShapeData = new List<List<float>>();
     // Time | Positional keys x y z | Rotational keys w x y z
     public List<List<float>> BoneData = new List<List<float>>();
 
-    public const string[] BlendShapeKeys = {"A", "Angry", "Blink", "Blink_L", "Blink_R", "E", "Fun", "I", "Joy", "LookDown", "LookLeft", "LookRight", "LookUp", "Neutral", "O", "Sorrow", "Surprised", "U"};
-    public const string[] BoneKeys = {"Chest", "Head", "Hips", "LeftEye", "LeftFoot", "LeftHand", "LeftIndexDistal", "LeftIndexIntermediate", "LeftIndexProximal", "LeftLittleDistal", "LeftLittleIntermediate", "LeftLittleProximal", "LeftLowerArm", "LeftLowerLeg", "LeftMiddleDistal", "LeftMiddleIntermediate", "LeftMiddleProximal", "LeftRingDistal", "LeftRingIntermediate", "LeftRingProximal", "LeftShoulder", "LeftThumbDistal", "LeftThumbIntermediate", "LeftThumbProximal", "LeftToes", "LeftUpperArm", "LeftUpperLeg", "Neck", "RightEye", "RightFoot", "RightHand", "RightIndexDistal", "RightIndexIntermediate", "RightIndexProximal", "RightLittleDistal", "RightLittleIntermediate", "RightLittleProximal", "RightLowerArm", "RightLowerLeg", "RightMiddleDistal", "RightMiddleIntermediate", "RightMiddleProximal", "RightRingDistal", "RightRingIntermediate", "RightRingProximal", "RightShoulder", "RightThumbDistal", "RightThumbIntermediate", "RightThumbProximal", "RightToes", "RightUpperArm", "RightUpperLeg", "Spine", "UpperChest"};
+    public static readonly string[] BlendShapeKeys = {"A", "Angry", "Blink", "Blink_L", "Blink_R", "E", "Fun", "I", "Joy", "LookDown", "LookLeft", "LookRight", "LookUp", "Neutral", "O", "Sorrow", "Surprised", "U"};
+    public static readonly string[] BoneKeys = {"Chest", "Head", "Hips", "LeftEye", "LeftFoot", "LeftHand", "LeftIndexDistal", "LeftIndexIntermediate", "LeftIndexProximal", "LeftLittleDistal", "LeftLittleIntermediate", "LeftLittleProximal", "LeftLowerArm", "LeftLowerLeg", "LeftMiddleDistal", "LeftMiddleIntermediate", "LeftMiddleProximal", "LeftRingDistal", "LeftRingIntermediate", "LeftRingProximal", "LeftShoulder", "LeftThumbDistal", "LeftThumbIntermediate", "LeftThumbProximal", "LeftToes", "LeftUpperArm", "LeftUpperLeg", "Neck", "RightEye", "RightFoot", "RightHand", "RightIndexDistal", "RightIndexIntermediate", "RightIndexProximal", "RightLittleDistal", "RightLittleIntermediate", "RightLittleProximal", "RightLowerArm", "RightLowerLeg", "RightMiddleDistal", "RightMiddleIntermediate", "RightMiddleProximal", "RightRingDistal", "RightRingIntermediate", "RightRingProximal", "RightShoulder", "RightThumbDistal", "RightThumbIntermediate", "RightThumbProximal", "RightToes", "RightUpperArm", "RightUpperLeg", "Spine", "UpperChest"};
 
     // Start is called before the first frame update
     void Start()
@@ -67,6 +76,7 @@ public class VDataCapture : MonoBehaviour
                 recordButton.GetComponentInChildren<Text>().text = "Recording...";
                 recordButton.interactable = false;
 
+                RestartServer(livePort);
                 BlendShapeData.Clear();
                 BoneData.Clear();
                 startTime = Time.realtimeSinceStartup;
@@ -83,11 +93,19 @@ public class VDataCapture : MonoBehaviour
         StopRecording();
     }
 
+    void RestartServer(int port)
+    {
+        server.StopServer();
+        server.port = port;
+        server.StartServer();
+    }
+
     public void StopRecording()
     {
         Microphone.End(null);
         goAudioSource.loop = true;
         goAudioSource.Play();
+        RestartServer(playbackPort);
         playback.Init();
         recordButton.GetComponentInChildren<Text>().text = "Redo Recording";
         recordButton.interactable = true;
@@ -105,12 +123,34 @@ public class VDataCapture : MonoBehaviour
         saveButton.interactable = false;
     }
 
+    public int GetBlendShapeRecordLength()
+    {
+        return BlendShapeData.Count;
+    }
+
     public List<float> GetBlendShapeRecordAt(int index, float timePassed)
     {
-        if (index < 0 || index >= BlendShapeData.Count) {
+        if (index < 0 || index >= GetBlendShapeRecordLength()) {
             return null;
         }
         List<float> record = BlendShapeData.ElementAt(index);
+        if (record.ElementAt(0) > timePassed) {
+            return null;
+        }
+        return record;
+    }
+
+    public int GetBoneRecordLength()
+    {
+        return BoneData.Count;
+    }
+
+    public List<float> GetBoneRecordAt(int index, float timePassed)
+    {
+        if (index < 0 || index >= GetBoneRecordLength()) {
+            return null;
+        }
+        List<float> record = BoneData.ElementAt(index);
         if (record.ElementAt(0) > timePassed) {
             return null;
         }
@@ -178,17 +218,31 @@ public class VDataCapture : MonoBehaviour
 
         List<float> BoneDataWindow = new List<float>();
         BoneDataWindow.Add(Time.realtimeSinceStartup - startTime);
-        foreach(Vector3 position in _HumanBodyBonesPositionTable.Values) {
+
+        foreach(string key in BoneKeys) {
+            Vector3 position = _HumanBodyBonesPositionTable[key];
+            Quaternion rotation = _HumanBodyBonesRotationTable[key];
+
             BoneDataWindow.Add(position.x);
             BoneDataWindow.Add(position.y);
             BoneDataWindow.Add(position.z);
-        }
-        foreach(Quaternion rotation in _HumanBodyBonesRotationTable.Values) {
-            BoneDataWindow.Add(rotation.w);
             BoneDataWindow.Add(rotation.x);
             BoneDataWindow.Add(rotation.y);
             BoneDataWindow.Add(rotation.z);
+            BoneDataWindow.Add(rotation.w);
         }
+
+        // foreach(Vector3 position in _HumanBodyBonesPositionTable.Values) {
+        //     BoneDataWindow.Add(position.x);
+        //     BoneDataWindow.Add(position.y);
+        //     BoneDataWindow.Add(position.z);
+        // }
+        // foreach(Quaternion rotation in _HumanBodyBonesRotationTable.Values) {
+        //     BoneDataWindow.Add(rotation.w);
+        //     BoneDataWindow.Add(rotation.x);
+        //     BoneDataWindow.Add(rotation.y);
+        //     BoneDataWindow.Add(rotation.z);
+        // }
         BoneData.Add(BoneDataWindow);
     }
 
