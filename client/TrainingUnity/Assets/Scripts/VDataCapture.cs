@@ -15,7 +15,8 @@ public class VDataCapture : MonoBehaviour
     private int maxFreq;
     private AudioSource goAudioSource;
 
-    public const int recordingDuration = 10;
+    [SerializeField]
+    public int recordingDuration = 10;
 
     [SerializeField]
     private Button recordButton;
@@ -114,7 +115,7 @@ public class VDataCapture : MonoBehaviour
 
     public void SaveRecording()
     {
-        string timestamp = System.DateTime.Now.ToString().Replace(":", "-");
+        string timestamp = System.DateTime.Now.ToString().Replace(":", "-").Replace("/", "-").Replace("\\", "-");
 
         SavWav.Save("Audio/" + timestamp, goAudioSource.clip);
         SavCsv.Save("Blendshapes/" + timestamp, BlendShapeData);
