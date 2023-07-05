@@ -1019,7 +1019,7 @@ PrefabInstance:
     - target: {fileID: 1761151428540106674, guid: fc8ea346cca7cf74b96f68ef0913ccd7,
         type: 3}
       propertyPath: recordingDuration
-      value: 120
+      value: 60
       objectReference: {fileID: 0}
     - target: {fileID: 1761151428540106675, guid: fc8ea346cca7cf74b96f68ef0913ccd7,
         type: 3}

@@ -41,6 +41,7 @@ public class VDataCapture : MonoBehaviour
     public List<List<float>> BlendShapeData = new List<List<float>>();
     // Time | Positional keys x y z | Rotational keys w x y z
     public List<List<float>> BoneData = new List<List<float>>();
+    public List<float> BoneDataWindow = new List<float>();
 
     public static readonly string[] BlendShapeKeys = {"A", "Angry", "Blink", "Blink_L", "Blink_R", "E", "Fun", "I", "Joy", "LookDown", "LookLeft", "LookRight", "LookUp", "Neutral", "O", "Sorrow", "Surprised", "U"};
     public static readonly string[] BoneKeys = {"Chest", "Head", "Hips", "LeftEye", "LeftFoot", "LeftHand", "LeftIndexDistal", "LeftIndexIntermediate", "LeftIndexProximal", "LeftLittleDistal", "LeftLittleIntermediate", "LeftLittleProximal", "LeftLowerArm", "LeftLowerLeg", "LeftMiddleDistal", "LeftMiddleIntermediate", "LeftMiddleProximal", "LeftRingDistal", "LeftRingIntermediate", "LeftRingProximal", "LeftShoulder", "LeftThumbDistal", "LeftThumbIntermediate", "LeftThumbProximal", "LeftToes", "LeftUpperArm", "LeftUpperLeg", "Neck", "RightEye", "RightFoot", "RightHand", "RightIndexDistal", "RightIndexIntermediate", "RightIndexProximal", "RightLittleDistal", "RightLittleIntermediate", "RightLittleProximal", "RightLowerArm", "RightLowerLeg", "RightMiddleDistal", "RightMiddleIntermediate", "RightMiddleProximal", "RightRingDistal", "RightRingIntermediate", "RightRingProximal", "RightShoulder", "RightThumbDistal", "RightThumbIntermediate", "RightThumbProximal", "RightToes", "RightUpperArm", "RightUpperLeg", "Spine", "UpperChest"};
@@ -167,6 +168,10 @@ public class VDataCapture : MonoBehaviour
         //     Debug.Log(item.Key + ": " + item.Value);
         // }
 
+        if (BoneDataWindow.Count == 0) {
+            return;
+        }
+
         SortedDictionary<string, float> _BlendShapeToValueDictionary;
         _BlendShapeToValueDictionary = new SortedDictionary<string, float>(BlendShapeToValueDictionary.ToDictionary(item => item.Key.ToString(), item => item.Value));
 
@@ -177,11 +182,17 @@ public class VDataCapture : MonoBehaviour
         // Debug.Log(keystrings);
 
         List<float> BlendShapeDataWindow = new List<float>();
-        BlendShapeDataWindow.Add(Time.realtimeSinceStartup - startTime);
+
+        float timeSync = Time.realtimeSinceStartup - startTime;
+
+        BlendShapeDataWindow.Add(timeSync);
         foreach(var key in _BlendShapeToValueDictionary.Values) {
             BlendShapeDataWindow.Add(key);
         }
         BlendShapeData.Add(BlendShapeDataWindow);
+
+        BoneDataWindow[0] = timeSync;
+        BoneData.Add(BoneDataWindow.GetRange(0, BoneDataWindow.Count));
     }
 
     public void RecordBones(Dictionary<HumanBodyBones, Vector3> HumanBodyBonesPositionTable, Dictionary<HumanBodyBones, Quaternion> HumanBodyBonesRotationTable) 
@@ -217,7 +228,7 @@ public class VDataCapture : MonoBehaviour
         // }
         // Debug.Log("Rotational: " + keystrings);
 
-        List<float> BoneDataWindow = new List<float>();
+        BoneDataWindow.Clear();
         BoneDataWindow.Add(Time.realtimeSinceStartup - startTime);
 
         foreach(string key in BoneKeys) {
@@ -244,7 +255,6 @@ public class VDataCapture : MonoBehaviour
         //     BoneDataWindow.Add(rotation.y);
         //     BoneDataWindow.Add(rotation.z);
         // }
-        BoneData.Add(BoneDataWindow);
     }
 
 }
