@@ -24,14 +24,54 @@
 //  derived from Gregorio Zanon's script
 //  http://forum.unity3d.com/threads/119295-Writing-AudioListener.GetOutputData-to-wav-problem?p=806734&viewfull=1#post806734
 
+// Modified 2023
+
 using System;
 using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.Networking;
 using System.Collections.Generic;
 
 public static class SavWav {
 
 	const int HEADER_SIZE = 44;
+
+	public async static Task<AudioClip> Load(string filename) {
+
+		if (!filename.ToLower().EndsWith(".wav")) {
+			filename += ".wav";
+		}
+
+		var filepath = Path.Combine(Application.persistentDataPath, filename);
+
+		Debug.Log(filepath);
+
+		AudioClip clip = null;
+		using (UnityWebRequest uwr = UnityWebRequestMultimedia.GetAudioClip(filepath, AudioType.WAV))
+		{
+			uwr.SendWebRequest();
+
+			// wrap tasks in try/catch, otherwise it'll fail silently
+			try
+			{
+				while (!uwr.isDone) await Task.Delay(5);
+
+				if (uwr.isNetworkError || uwr.isHttpError) Debug.Log($"{uwr.error}");
+				else
+				{
+					clip = DownloadHandlerAudioClip.GetContent(uwr);
+				}
+			}
+			catch (Exception err)
+			{
+				Debug.Log($"{err.Message}, {err.StackTrace}");
+			}
+		}
+
+		return clip;
+	}
 
 	public static bool Save(string filename, AudioClip clip) {
 		if (!filename.ToLower().EndsWith(".wav")) {

@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System.IO;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -16,13 +17,16 @@ public class VDataCapture : MonoBehaviour
     private AudioSource goAudioSource;
 
     [SerializeField]
-    public int recordingDuration = 10;
+    public float recordingDuration = 10f;
 
     [SerializeField]
     private Button recordButton;
 
     [SerializeField]
     private Button saveButton;
+
+    [SerializeField]
+    private Button loadButton;
 
     [SerializeField]
     private VDataPlayback playback;
@@ -39,7 +43,7 @@ public class VDataCapture : MonoBehaviour
     private float startTime = -1.0f;
     // Time | Keys
     public List<List<float>> BlendShapeData = new List<List<float>>();
-    // Time | Positional keys x y z | Rotational keys w x y z
+    // Time | Positional keys x y z | Rotational keys x y z w
     public List<List<float>> BoneData = new List<List<float>>();
     private List<float> BoneDataWindow = new List<float>();
 
@@ -66,6 +70,7 @@ public class VDataCapture : MonoBehaviour
             goAudioSource = this.GetComponent<AudioSource>();    
         }
         saveButton.interactable = false;
+        loadButton.interactable = File.Exists(Path.Combine(Application.persistentDataPath, "Audio/prediction.wav"));
     }
 
     public void StartRecording()
@@ -74,16 +79,17 @@ public class VDataCapture : MonoBehaviour
         {    
             if(!Microphone.IsRecording(null))    
             {    
-                goAudioSource.clip = Microphone.Start(null, true, recordingDuration, maxFreq);
+                goAudioSource.clip = Microphone.Start(null, true, (int) recordingDuration, maxFreq);
                 recordButton.GetComponentInChildren<Text>().text = "Recording...";
                 recordButton.interactable = false;
+                loadButton.interactable = false;
 
                 RestartServer(livePort);
                 BlendShapeData.Clear();
                 BoneData.Clear();
                 startTime = Time.realtimeSinceStartup;
 
-                StartCoroutine(WaitForStopRecording(recordingDuration));
+                StartCoroutine(WaitForStopRecording((int) recordingDuration));
             } 
         }
     }
@@ -112,6 +118,7 @@ public class VDataCapture : MonoBehaviour
         recordButton.GetComponentInChildren<Text>().text = "Redo Recording";
         recordButton.interactable = true;
         saveButton.interactable = true;
+        loadButton.interactable = File.Exists(Path.Combine(Application.persistentDataPath, "Audio/prediction.wav"));
     }
 
     public void SaveRecording()
@@ -123,6 +130,26 @@ public class VDataCapture : MonoBehaviour
         SavCsv.Save("Bones/" + timestamp, BoneData);
 
         saveButton.interactable = false;
+    }
+
+    public async void LoadPrediction()
+    {
+        goAudioSource.loop = true;
+
+        goAudioSource.clip = await SavWav.Load("Audio/prediction.wav");
+        recordingDuration = goAudioSource.clip.length;
+        
+        BlendShapeData = SavCsv.Load("Blendshapes/prediction.csv");
+        BoneData = SavCsv.Load("Bones/prediction.csv");
+
+        goAudioSource.Play();
+        
+        RestartServer(playbackPort);
+        playback.Init();
+        recordButton.GetComponentInChildren<Text>().text = "Start Recording";
+        recordButton.interactable = true;
+        saveButton.interactable = false;
+        loadButton.interactable = false;
     }
 
     public int GetBlendShapeRecordLength()

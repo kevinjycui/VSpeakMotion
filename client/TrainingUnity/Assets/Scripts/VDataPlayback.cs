@@ -32,7 +32,7 @@ public class VDataPlayback : MonoBehaviour
         boneIndex = 0;
         loadTime = Time.realtimeSinceStartup;
 
-        StartCoroutine(WaitForStopRecording(captureObject.recordingDuration));
+        StartCoroutine(WaitForStopRecording((int) captureObject.recordingDuration));
     }
 
     IEnumerator WaitForStopRecording(int seconds)
