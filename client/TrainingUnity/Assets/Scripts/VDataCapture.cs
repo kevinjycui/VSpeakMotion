@@ -40,9 +40,16 @@ public class VDataCapture : MonoBehaviour
     [SerializeField]
     public int playbackPort = 39541;
 
+    [SerializeField]
+    public float recordRate = 0.01f;
+
+    [SerializeField]
+    public float audioDelay = 0.05f;
+
     private float startTime = -1.0f;
     // Time | Keys
     public List<List<float>> BlendShapeData = new List<List<float>>();
+    private List<float> BlendShapeDataWindow = new List<float>();
     // Time | Positional keys x y z | Rotational keys x y z w
     public List<List<float>> BoneData = new List<List<float>>();
     private List<float> BoneDataWindow = new List<float>();
@@ -50,9 +57,26 @@ public class VDataCapture : MonoBehaviour
     public static readonly string[] BlendShapeKeys = {"A", "Angry", "Blink", "Blink_L", "Blink_R", "E", "Fun", "I", "Joy", "LookDown", "LookLeft", "LookRight", "LookUp", "Neutral", "O", "Sorrow", "Surprised", "U"};
     public static readonly string[] BoneKeys = {"Chest", "Head", "Hips", "LeftEye", "LeftFoot", "LeftHand", "LeftIndexDistal", "LeftIndexIntermediate", "LeftIndexProximal", "LeftLittleDistal", "LeftLittleIntermediate", "LeftLittleProximal", "LeftLowerArm", "LeftLowerLeg", "LeftMiddleDistal", "LeftMiddleIntermediate", "LeftMiddleProximal", "LeftRingDistal", "LeftRingIntermediate", "LeftRingProximal", "LeftShoulder", "LeftThumbDistal", "LeftThumbIntermediate", "LeftThumbProximal", "LeftToes", "LeftUpperArm", "LeftUpperLeg", "Neck", "RightEye", "RightFoot", "RightHand", "RightIndexDistal", "RightIndexIntermediate", "RightIndexProximal", "RightLittleDistal", "RightLittleIntermediate", "RightLittleProximal", "RightLowerArm", "RightLowerLeg", "RightMiddleDistal", "RightMiddleIntermediate", "RightMiddleProximal", "RightRingDistal", "RightRingIntermediate", "RightRingProximal", "RightShoulder", "RightThumbDistal", "RightThumbIntermediate", "RightThumbProximal", "RightToes", "RightUpperArm", "RightUpperLeg", "Spine", "UpperChest"};
 
+    private List<string> BlendShapeHeader;
+    private List<string> BoneHeader;
+
     // Start is called before the first frame update
     void Start()
     {
+        BlendShapeHeader = BlendShapeKeys.ToList();
+        BlendShapeHeader.Insert(0, "Time");
+        BoneHeader = new List<string>();
+        BoneHeader.Add("Time");
+        foreach (string key in BoneKeys) {
+            BoneHeader.Add(key + "PosX");
+            BoneHeader.Add(key + "PosY");
+            BoneHeader.Add(key + "PosZ");
+            BoneHeader.Add(key + "RotX");
+            BoneHeader.Add(key + "RotY");
+            BoneHeader.Add(key + "RotZ");
+            BoneHeader.Add(key + "RotW");
+        }
+
         if(Microphone.devices.Length <= 0) {    
             Debug.LogWarning("Microphone not connected!");    
             recordButton.interactable = false;  
@@ -89,6 +113,7 @@ public class VDataCapture : MonoBehaviour
                 BoneData.Clear();
                 startTime = Time.realtimeSinceStartup;
 
+                StartCoroutine(WaitForSubmitRecordings());
                 StartCoroutine(WaitForStopRecording((int) recordingDuration));
             } 
         }
@@ -108,10 +133,17 @@ public class VDataCapture : MonoBehaviour
         server.StartServer();
     }
 
+    IEnumerator PlayAudioDelay()
+    {
+        yield return new WaitForSeconds(audioDelay);
+        goAudioSource.Play();
+    }
+
     public void StopRecording()
     {
         Microphone.End(null);
         goAudioSource.loop = true;
+        StartCoroutine(PlayAudioDelay());
         goAudioSource.Play();
         RestartServer(playbackPort);
         playback.Init();
@@ -126,8 +158,8 @@ public class VDataCapture : MonoBehaviour
         string timestamp = System.DateTime.Now.ToString().Replace(":", "-").Replace("/", "-").Replace("\\", "-");
 
         SavWav.Save("Audio/" + timestamp, goAudioSource.clip);
-        SavCsv.Save("Blendshapes/" + timestamp, BlendShapeData);
-        SavCsv.Save("Bones/" + timestamp, BoneData);
+        SavCsv.Save("Blendshapes/" + timestamp, BlendShapeHeader, BlendShapeData);
+        SavCsv.Save("Bones/" + timestamp, BoneHeader, BoneData);
 
         saveButton.interactable = false;
     }
@@ -142,7 +174,7 @@ public class VDataCapture : MonoBehaviour
         BlendShapeData = SavCsv.Load("Blendshapes/prediction.csv");
         BoneData = SavCsv.Load("Bones/prediction.csv");
 
-        goAudioSource.Play();
+        StartCoroutine(PlayAudioDelay());
         
         RestartServer(playbackPort);
         playback.Init();
@@ -186,6 +218,31 @@ public class VDataCapture : MonoBehaviour
         return record;
     }
 
+    IEnumerator WaitForSubmitRecordings()
+    {
+        yield return new WaitForSeconds(recordRate);
+        SubmitRecordings();
+        if (!recordButton.interactable) {
+            StartCoroutine(WaitForSubmitRecordings());
+        }
+    }
+
+    void SubmitRecordings()
+    {
+        float timeSync = Time.realtimeSinceStartup - startTime;
+
+        if (BlendShapeDataWindow.Count != BlendShapeHeader.Count || BoneDataWindow.Count != BoneHeader.Count) {
+            Debug.Log("Skipped frame at " + timeSync);
+            return;
+        }
+
+        BlendShapeDataWindow[0] = timeSync;
+        BlendShapeData.Add(BlendShapeDataWindow.GetRange(0, BlendShapeDataWindow.Count));
+
+        BoneDataWindow[0] = timeSync;
+        BoneData.Add(BoneDataWindow.GetRange(0, BoneDataWindow.Count));
+    }
+
     public void RecordBlendShapes(Dictionary<BlendShapeKey, float> BlendShapeToValueDictionary)
     {
         if (startTime == -1.0f) {
@@ -208,18 +265,11 @@ public class VDataCapture : MonoBehaviour
         // }
         // Debug.Log(keystrings);
 
-        List<float> BlendShapeDataWindow = new List<float>();
-
-        float timeSync = Time.realtimeSinceStartup - startTime;
-
-        BlendShapeDataWindow.Add(timeSync);
+        BlendShapeDataWindow.Clear();
+        BlendShapeDataWindow.Add(Time.realtimeSinceStartup - startTime);
         foreach(var key in _BlendShapeToValueDictionary.Values) {
             BlendShapeDataWindow.Add(key);
         }
-        BlendShapeData.Add(BlendShapeDataWindow);
-
-        BoneDataWindow[0] = timeSync;
-        BoneData.Add(BoneDataWindow.GetRange(0, BoneDataWindow.Count));
     }
 
     public void RecordBones(Dictionary<HumanBodyBones, Vector3> HumanBodyBonesPositionTable, Dictionary<HumanBodyBones, Quaternion> HumanBodyBonesRotationTable) 
