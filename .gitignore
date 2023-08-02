@@ -1,4 +1,6 @@
 env/
+models/*
+!models/.gitkeep
 
 *.bundle.*
 lib/
