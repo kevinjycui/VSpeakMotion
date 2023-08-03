@@ -2,7 +2,7 @@ env/
 models/*
 !models/.gitkeep
 
-*/*.csv\#
+*/.lock.*
 
 *.bundle.*
 lib/
