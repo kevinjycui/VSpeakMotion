@@ -2,6 +2,8 @@ env/
 models/*
 !models/.gitkeep
 
+*/*.csv\#
+
 *.bundle.*
 lib/
 node_modules/
