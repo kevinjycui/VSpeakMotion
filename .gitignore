@@ -3,7 +3,8 @@ models/*
 !models/.gitkeep
 
 sampledata/*
-!sampledata/**/.gitkeep
+!sampledata/Training/.gitkeep
+!sampledata/Prediction/.gitkeep
 
 */.lock.*
 
