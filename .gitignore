@@ -3,8 +3,12 @@ models/*
 !models/.gitkeep
 
 sampledata/*
-!sampledata/Training/.gitkeep
-!sampledata/Prediction/.gitkeep
+!sampledata/Training/Audio/.gitkeep
+!sampledata/Training/Blendshapes/.gitkeep
+!sampledata/Training/Bones/.gitkeep
+!sampledata/Prediction/Audio/.gitkeep
+!sampledata/Prediction/Blendshapes/.gitkeep
+!sampledata/Prediction/Bones/.gitkeep
 
 */.lock.*
 
