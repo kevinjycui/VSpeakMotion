@@ -2,7 +2,13 @@ env/
 models/*
 !models/.gitkeep
 
-sampledata/*
+sampledata/Training/Audio/*
+sampledata/Training/Blendshapes/*
+sampledata/Training/Bones/*
+sampledata/Prediction/Audio/*
+sampledata/Prediction/Blendshapes/*
+sampledata/Prediction/Bones/*
+
 !sampledata/Training/Audio/.gitkeep
 !sampledata/Training/Blendshapes/.gitkeep
 !sampledata/Training/Bones/.gitkeep
